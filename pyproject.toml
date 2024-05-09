@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pricing-lending-protocols"
+version = "0.1.0"
+description = ''
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Marc Sabaté", email = "msabvid@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = ["torch", "numpy", "tqdm", "scipy", "joblib", "matplotlib","ipykernel", "pandas", "Historic-Crypto"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.envs.dev]
+dependencies = [
+  "pre-commit >= 3.3.3",
+]
+
+[tool.hatch.envs.dev.scripts]
+lint = "pre-commit install && pre-commit run --all-files"
