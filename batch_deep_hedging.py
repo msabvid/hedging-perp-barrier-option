@@ -1,11 +1,11 @@
-import torch
 import argparse
-from itertools import product
 import json
+from itertools import product
+
+import torch
 
 from pricing_lending_protocols import deep_hedging
 from pricing_lending_protocols.market_generator import Gbm
-
 
 if __name__ == "__main__":
 
@@ -25,29 +25,29 @@ if __name__ == "__main__":
     r_cE = 0.017
 
     # gas fees
-    mean_gas_fees = 5e-9 # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
-    units_gas_transaction = 100000 #21000
+    mean_gas_fees = 5e-9  # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
+    units_gas_transaction = 100000  # 21000
     mean_gas_fees = mean_gas_fees * units_gas_transaction
 
     # random seed
     torch.random.seed = 1
 
     # market parameters
-    sigmas = [0.1,0.3,0.5]
-    mus = [-0.3,0.0, 0.3]
+    sigmas = [0.1, 0.3, 0.5]
+    mus = [-0.3, 0.0, 0.3]
 
     # inital theta^0
     initial_ltvs = [0.81, 0.83, 0.85, 0.87, 0.89]
 
     # loan-to-values
     theta = 0.9
-    
+
     # parameters Deep Hedging
     params = [
         dict(
             mean_gas_fees=mean_gas_fees,
             mean_slippage=0,
-            market_generator = Gbm(mu, sigma),
+            market_generator=Gbm(mu, sigma),
             r_cD=r_cD,
             r_bD=r_bD,
             r_cE=r_cE,
@@ -56,8 +56,8 @@ if __name__ == "__main__":
             theta=theta,
             p0=2000,
             level=0.1,
-            deep_hedging_type=deep_hedging.DeepHedgingBarrierOption, 
-            dir_results = f"results/mu{mu}_sigma{sigma}_theta0{theta0}"
+            deep_hedging_type=deep_hedging.DeepHedgingBarrierOption,
+            dir_results=f"results/mu{mu}_sigma{sigma}_theta0{theta0}",
         )
         for mu, sigma, theta0 in product(mus, sigmas, initial_ltvs)
     ]
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         dict(
             mean_gas_fees=mean_gas_fees,
             mean_slippage=0,
-            market_generator = Gbm(mu, sigma),
+            market_generator=Gbm(mu, sigma),
             r_cD=r_cD,
             r_bD=r_bD,
             r_cE=r_cE,
@@ -85,8 +85,8 @@ if __name__ == "__main__":
             theta=theta,
             p0=2000,
             level=0.1,
-            deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption, 
-            dir_results = f"results/mu{mu}_sigma{sigma}_theta0{theta0}"
+            deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption,
+            dir_results=f"results/mu{mu}_sigma{sigma}_theta0{theta0}",
         )
         for mu, sigma, theta0 in product(mus, sigmas, initial_ltvs)
     ]
@@ -99,5 +99,3 @@ if __name__ == "__main__":
     )
     with open("results/delta_hedging.json", "w") as f:
         json.dump(grouped_results, f, indent=4)
-    
-

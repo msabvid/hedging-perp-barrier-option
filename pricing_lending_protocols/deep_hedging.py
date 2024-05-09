@@ -1,17 +1,17 @@
-import torch
-import torch.nn as nn
 import logging
 import os
-import tqdm
+from typing import Dict, List, Tuple
+
 import joblib
-from typing import List, Dict, Tuple
+import torch
+import torch.nn as nn
+import tqdm
 
 from pricing_lending_protocols.nn import RNN
 from pricing_lending_protocols.risk_measure import ES
 
 
 class DeepHedgingBase(nn.Module):
-
     def __init__(
         self,
         mean_gas_fees: float,
@@ -145,7 +145,6 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
             theta0=theta0,
             theta=theta,
         )
-        
 
     def forward(
         self,
@@ -181,8 +180,10 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
 
             h = discretisation[i + 1] - discretisation[i]
             v_new = (
-                (1 + self.r_cD * h) * torch.clamp(v[:, i, :] - hedge[:, i, :] * p, min=0)
-                + (1 + self.r_bD * h) * torch.clamp(v[:, i, :] - hedge[:, i, :] * p, max=0)
+                (1 + self.r_cD * h)
+                * torch.clamp(v[:, i, :] - hedge[:, i, :] * p, min=0)
+                + (1 + self.r_bD * h)
+                * torch.clamp(v[:, i, :] - hedge[:, i, :] * p, max=0)
                 + (1 + self.r_cE * h) * torch.clamp(hedge[:, i, :], min=0) * p_new
                 + (1 + self.r_cE * h) * torch.clamp(hedge[:, i, :], max=0) * p_new
             )
@@ -203,11 +204,15 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
             )
             payoff = payoff * liquidated.logical_not()
             v_new = v_new * liquidated.logical_not()
-            cost_transaction = 20 # self.mean_gas_fees * p
-            change_units_eth = hedge[:,i,:] if i==0 else hedge[:,i,:] - hedge[:,i-1,:]
+            cost_transaction = 20  # self.mean_gas_fees * p
+            change_units_eth = (
+                hedge[:, i, :] if i == 0 else hedge[:, i, :] - hedge[:, i - 1, :]
+            )
+            # I approximate indicator function by (1-e^(x^2)) in order
+            # to backpropagate
             transaction_costs = cost[:, i, :] + cost_transaction * (
-                1 - torch.exp(- change_units_eth ** 2)
-            )  # I approximate indicator function by (1-e^(x^2)) in order to backpropagate
+                1 - torch.exp(-(change_units_eth**2))
+            )
             transaction_costs = transaction_costs * liquidated.logical_not()
 
             # update processes
@@ -218,9 +223,7 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
         return v, payoff_, cost
 
 
-
 class DeltaHedgeBarrierOption(DeepHedgingBarrierOption):
-
     def __init__(
         self,
         mean_gas_fees: float,
@@ -248,7 +251,6 @@ class DeltaHedgeBarrierOption(DeepHedgingBarrierOption):
         del self.hedge
         self.hedge = lambda t, x: torch.exp(self.r_cE * t)
 
-    
     def forward(
         self,
         ts: torch.Tensor,
@@ -328,9 +330,11 @@ class DeepHedgingLoanPosition(DeepHedgingBase):
 
         # calculate payoff of loan position
         payoff = torch.zeros(batch_size)
-        units_debt_asset, units_collateral_asset, recovered_units_debt_asset = (
-            self.loan_position(ts, x, lag)
-        )
+        (
+            units_debt_asset,
+            units_collateral_asset,
+            recovered_units_debt_asset,
+        ) = self.loan_position(ts, x, lag)
 
         mask_bad_debt = units_debt_asset[:, -1] > (
             units_collateral_asset[:, -1] * x[:, -1, 0]
@@ -456,7 +460,7 @@ def solve(
     )
 
     lag = len(ts) // 10
-    
+
     if deep_hedging_type == DeepHedgingBarrierOption:
         # Traing Deep hedging of Barrier option
 
@@ -468,7 +472,6 @@ def solve(
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=[8000], gamma=0.1
         )
-
 
         # training
         deep_hedging.train()
@@ -497,7 +500,7 @@ def solve(
     cvar = deep_hedging.cvar(
         ts=ts, lag=lag, level=level, batch_size=15000, p0=p0, seed=10, **kwargs
     )
-    print(cvar, mse, deep_hedging.v_init)
+    # print(cvar, mse, deep_hedging.v_init)
     return cvar.item(), mse.item(), deep_hedging.v_init.item(), deep_hedging
 
 
@@ -525,7 +528,7 @@ def batch_solve(
             grouped_results[-1].update(
                 {"sigma": market_generator.sigma, "mu": market_generator.mu}
             )
-        except:
+        except:  # noqa: E722
             pass
 
     return grouped_results

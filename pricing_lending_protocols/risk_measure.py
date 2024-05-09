@@ -1,5 +1,6 @@
 import torch
 
+
 def VaR(alpha: float, x: torch.Tensor):
     """
     VaR_alpha(X) = -F_X^{-1}(alpha)
@@ -17,5 +18,7 @@ def ES(lam: float, x: torch.Tensor):
 
     N = len(x)
 
-    expected_shortfall = -1/lam * (1/N * mask.sum() + empirical_var*(1/N * len(mask) - lam))
+    expected_shortfall = (
+        -1 / lam * (1 / N * mask.sum() + empirical_var * (1 / N * len(mask) - lam))
+    )
     return expected_shortfall

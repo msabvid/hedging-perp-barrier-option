@@ -1,9 +1,9 @@
-import torch
 import argparse
+
+import torch
 
 from pricing_lending_protocols import deep_hedging
 from pricing_lending_protocols.market_generator import Gbm
-
 
 if __name__ == "__main__":
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     r_cE = 0.017
 
     # gas fees
-    mean_gas_fees = 5e-9 # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
-    units_gas_transaction = 100000 #21000
+    mean_gas_fees = 5e-9  # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
+    units_gas_transaction = 100000  # 21000
     mean_gas_fees = mean_gas_fees * units_gas_transaction
 
     # random seed
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         theta=theta,
         p0=2000,
         level=0.1,
-        #deep_hedging_type=deep_hedging.DeepHedgingBarrierOption, # deep_hedging_type
-        deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption # deep_hedging_type
+        # deep_hedging_type=deep_hedging.DeepHedgingBarrierOption, # deep_hedging_type
+        deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption,  # deep_hedging_type
     )
     print(cvar)

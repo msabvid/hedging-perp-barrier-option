@@ -61,11 +61,13 @@ class RNN(nn.Module):
         Parameters
         ----------
         x: torch.Tensor
-            Sequential input. Tensor of size (N,L,d) where N is batch size, L is lenght of the sequence, and d is dimension of the path
+            Sequential input. Tensor of size (N,L,d) where N is batch size,
+            L is lenght of the sequence, and d is dimension of the path
         Returns
         -------
         torch.Tensor
-            Sequential output. Tensor of size (N, L, d_out) containing the output from the last layer of the RNN for each timestep
+            Sequential output. Tensor of size (N, L, d_out) containing the
+            output from the last layer of the RNN for each timestep
         """
         output_RNN, _ = self.rnn(torch.cat(x, -1))
         output = self.ffn(output_RNN)

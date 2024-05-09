@@ -1,9 +1,9 @@
-import torch
 import math
+
+import torch
 
 
 class Gbm:
-
     def __init__(self, mu: float, sigma: float):
 
         self.mu = mu
@@ -42,7 +42,6 @@ class Gbm:
 
 
 class Heston:
-
     def __init__(
         self, r: float, q: float, kappa: float, theta: float, sigma_v: float, rho: float
     ):
