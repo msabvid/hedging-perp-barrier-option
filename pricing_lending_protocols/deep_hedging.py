@@ -12,6 +12,10 @@ from pricing_lending_protocols.risk_measure import ES
 
 
 class DeepHedgingBase(nn.Module):
+    """
+    Deep hedging of loan position
+    """
+
     def __init__(
         self,
         mean_gas_fees: float,
@@ -24,6 +28,32 @@ class DeepHedgingBase(nn.Module):
         theta0: float,
         theta: float,
     ):
+        """
+        Base class for hedging a loan position with different rates
+        for borrowing / supplying collateral and debt assets.
+
+        Parameters
+        ----------
+        mean_gas_fees: float
+            Mean gas fees per transaction, typically a Uniswap swap.
+        mean_slippage: float
+            Mean price slippage per transaction
+        market_generator: pricing_lending_protocol.MarketGenerator
+            Market Generator process (e.g. Gbm)
+        r_cD: float
+            Interest rate of collateral for non-risky asset (e.g. DAI)
+        r_bD: float
+            Interest rate of debt for non-risky asset (e.g. DAI)
+        r_cE: float
+            Interest rate of collateral for risky asset (e.g. ETH)
+        r_bE: float
+            Interest rate of debt for risky asset (e.g. ETH)
+        theta0: float
+            Initial loan-to-value
+        theta: float
+            Liquidation loan-to-value
+
+        """
         super().__init__()
 
         self.hedge = RNN(
@@ -70,6 +100,37 @@ class DeepHedgingBase(nn.Module):
         batch_size: int,
         **kwargs,
     ):
+        """
+        Predicts the value of the replicating portfolio, the payoff of the option and
+        the cost of the trading strategy at each step.
+
+        Parameters
+        ----------
+        ts: torch.Tensor
+            Time discretisation
+        lag: int
+            Lag of coarser time discretisation. Motivation for this is to price
+            a barrier option using FBSDE approach.
+        p0: float
+            Initial price
+        seed: int
+            Random seed
+        batch_size: int
+            Batch size
+        **kwargs:
+            Additional keyword arguments passed to market_generator.forward() method
+
+        Returns
+        -------
+        torch.Tensor
+            Value of replicating portfolio. Tensor of shape (batch_size, n_steps, 1)
+        torch.Tensor
+            Payoff of barrier option at each time step.
+            Tensor of shape (batch_size, n_steps, 1)
+        torch.Tensor
+            Cost of trading strategy of replicating portfolio.
+            Tensor of shape (batch_size, n_steps 1)
+        """
         torch.manual_seed(seed)
         x0 = torch.ones((batch_size, 1)) * p0
         v, payoff, cost = self.forward(ts, lag=lag, x0=x0, **kwargs)
@@ -85,6 +146,36 @@ class DeepHedgingBase(nn.Module):
         seed: int,
         **kwargs,
     ):
+        """
+        Calculates the cVaR (or expected shortfall) of
+        X = (v-cost) - payoff
+        Reference: https://vega.xyz/papers/margins-and-credit-risk.pdf
+
+        Parameters
+        ----------
+        ts: torch.Tensor
+            Time discretisation
+        lag: int
+            Lag of coarser time discretisation. Motivation for this is to price
+            a barrier option using FBSDE approach.
+        level: float
+            Level of Expected Shortfall
+        p0: float
+            Initial price
+        batch_size: int
+            Batch size
+        seed: int
+            Random seed
+        **kwargs:
+            Additional keyword arguments passed to market_generator.forward() method
+
+        Returns
+        -------
+        float
+            Average cVaR(X) per time step.
+
+
+        """
         v, payoff, cost = self.predict(
             ts=ts, lag=lag, p0=p0, seed=seed, batch_size=batch_size, **kwargs
         )
@@ -102,15 +193,56 @@ class DeepHedgingBase(nn.Module):
         seed: int,
         **kwargs,
     ):
+        """
+        Calculates MSE of X = (v-cost) - payoff
+
+        Parameters
+        ----------
+        ts: torch.Tensor
+            Time discretisation
+        lag: int
+            Lag of coarser time discretisation. Motivation for this is to price
+            a barrier option using FBSDE approach.
+        p0: float
+            Initial price
+        batch_size: int
+            Batch size
+        seed: int
+            Random seed
+        **kwargs:
+            Additional keyword arguments passed to market_generator.forward() method
+
+        Returns
+        -------
+        float
+            MSE per timestep
+        """
         v, payoff, cost = self.predict(
             ts=ts, lag=lag, p0=p0, seed=seed, batch_size=batch_size, **kwargs
         )
         return torch.mean((payoff - (v - cost)) ** 2)
 
     def update_training_record(self, loss: torch.Tensor):
+        """
+        Updates self.training_record with `loss`
+
+        Parameters
+        ----------
+        loss: torch.Tensor
+            training loss.
+        """
         self.training_record.append(loss.item())
 
     def save(self, dir_results: str):
+        """
+        Saves the current weights of the hedging strategy
+        and the training loss.
+
+        Parameters
+        ----------
+        dir_results: str
+
+        """
         torch.save(
             {"weights": self.state_dict(), "training_loss": self.training_record},
             os.path.join(dir_results, "model.pt"),
@@ -119,7 +251,21 @@ class DeepHedgingBase(nn.Module):
 
 class DeepHedgingBarrierOption(DeepHedgingBase):
     """
-    Deep hedging of a Barrier Option from the borrower point of view
+    Deep hedging of a loan position conisdered as a perpetual barrier option
+    Payoff of the barrier option is
+    .. math::
+        \\psi(t, P_t) = (e^{r^{cE} t } P_t - \theta^0 \\cdot P_0 \\cdot
+        e^{r^{bD} t } P_0) \\cdot 1_{t<\tau^B}
+
+    where the stopping time is defined
+    .. math::
+        \tau^B = \\inf_t \\{ t : \frac{\theta^0 \\cdot P_0 \\cdot  e^{r^{bD} t } P_0}
+        { e^{r^{cE} t } P_t } < \theta  \\}
+
+    The above can be interpreted as:
+    - Borrower deposits 1ETH as collateral and borrows \theta^0 P_0 units of DAI.
+    - At time \tau^B the borrowed value breaches the liquidation loan-to-value
+    and the whole position is wiped (liquidated)
     """
 
     def __init__(
@@ -134,6 +280,28 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
         theta0: float,
         theta: float,
     ):
+        """
+        Parameters
+        ----------
+        mean_gas_fees: float
+            Mean gas fees per transaction, typically a Uniswap swap.
+        mean_slippage: float
+            Mean price slippage per transaction
+        market_generator: pricing_lending_protocol.MarketGenerator
+            Market Generator process (e.g. Gbm)
+        r_cD: float
+            Interest rate of collateral for non-risky asset (e.g. DAI)
+        r_bD: float
+            Interest rate of debt for non-risky asset (e.g. DAI)
+        r_cE: float
+            Interest rate of collateral for risky asset (e.g. ETH)
+        r_bE: float
+            Interest rate of debt for risky asset (e.g. ETH)
+        theta0: float
+            Initial loan-to-value
+        theta: float
+            Liquidation loan-to-value
+        """
         super().__init__(
             mean_gas_fees=mean_gas_fees,
             mean_slippage=mean_slippage,
@@ -153,6 +321,31 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
         x0: torch.Tensor,
         **kwargs,
     ):
+        """
+        Samples `batch_size` market scenarios from self.MarketGenerator,
+        and builds a self-financing portfolio hedging the barrier option
+
+        Parameters
+        ----------
+        ts: torch.Tensor
+            Time discretisation
+        lag: int
+            Trader trades eery `lag` steps
+        x0: torch.Tensor
+            Initial price of collateral. Tensor of shape (batch_size, 1)
+
+        Returns
+        -------
+        torch.Tensor
+            Value of the portfolio at every timestemp.
+            Tensor of shape (batch_size, n_steps, 1)
+        torch.Tensor
+            Payoff of the barrier option at every timestemp
+            Tensor of shape (batch_size, n_steps, 1)
+        torch.Tensor
+            Cost of the hedging strategy
+            Tensor of shape (batch_size, n_steps, 1)
+        """
 
         batch_size = x0.shape[0]
         x = self.market_generator.sdeint(ts=ts, x0=x0, **kwargs)
@@ -438,6 +631,55 @@ def solve(
     dir_results: str,
     **kwargs,
 ):
+    """
+    Solver function that optimises the parametrisation of the hedging strategy
+    so that the resulting portfolio replicates the barrier option payoff
+    at every timestemp.
+
+    Parameters
+    ----------
+    mean_gas_fees: float
+        Mean gas fees per transaction, typically a Uniswap swap.
+    mean_slippage: float
+        Mean price slippage per transaction
+    market_generator: pricing_lending_protocol.MarketGenerator
+        Market Generator process (e.g. Gbm)
+    r_cD: float
+        Interest rate of collateral for non-risky asset (e.g. DAI)
+    r_bD: float
+        Interest rate of debt for non-risky asset (e.g. DAI)
+    r_cE: float
+        Interest rate of collateral for risky asset (e.g. ETH)
+    r_bE: float
+        Interest rate of debt for risky asset (e.g. ETH)
+    theta0: float
+        Initial loan-to-value
+    theta: float
+        Liquidation loan-to-value
+    p0: float
+        Initial price of collateral asset in terms of debt asset
+    level: float
+        level of Expected Shortfall (optional?)
+    deep_hedging_type:
+
+    dir_results: str
+        directory where the hedging strategy weights and the training loss
+        is saved
+    **kwargs: Dict[]
+        Additional keyword arguments for the Market Generator
+
+    Returns
+    -------
+    float
+        ES(X) where X=payoff - (v-cost) for every timestemp
+    float
+        mse(X) for every timestemp
+    float
+        Initial portfolio value
+    Dict[]
+        state_dict mapping model's layers to its weights
+
+    """
 
     # logging configuration
     if not os.path.exists(dir_results):
@@ -500,7 +742,6 @@ def solve(
     cvar = deep_hedging.cvar(
         ts=ts, lag=lag, level=level, batch_size=15000, p0=p0, seed=10, **kwargs
     )
-    # print(cvar, mse, deep_hedging.v_init)
     return cvar.item(), mse.item(), deep_hedging.v_init.item(), deep_hedging
 
 
