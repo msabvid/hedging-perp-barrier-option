@@ -222,6 +222,44 @@ class DeepHedgingBase(nn.Module):
         )
         return torch.mean((payoff - (v - cost)) ** 2)
 
+    def relative_error(
+        self,
+        ts: torch.Tensor,
+        lag: int,
+        p0: float,
+        batch_size: int,
+        seed: int,
+        **kwargs,
+    ):
+        """
+        Calculates MSE of X = (v-cost) - payoff
+
+        Parameters
+        ----------
+        ts: torch.Tensor
+            Time discretisation
+        lag: int
+            Lag of coarser time discretisation. Motivation for this is to price
+            a barrier option using FBSDE approach.
+        p0: float
+            Initial price
+        batch_size: int
+            Batch size
+        seed: int
+            Random seed
+        **kwargs:
+            Additional keyword arguments passed to market_generator.forward() method
+
+        Returns
+        -------
+        float
+            MSE per timestep
+        """
+        v, payoff, cost = self.predict(
+            ts=ts, lag=lag, p0=p0, seed=seed, batch_size=batch_size, **kwargs
+        )
+        return torch.nanmean((payoff - (v - cost)) / payoff)
+
     def update_training_record(self, loss: torch.Tensor):
         """
         Updates self.training_record with `loss`

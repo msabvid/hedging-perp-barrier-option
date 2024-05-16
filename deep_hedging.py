@@ -31,13 +31,13 @@ if __name__ == "__main__":
     torch.random.seed = 1
 
     # market generator
-    market_generator = Gbm(mu=-0.1, sigma=0.9)
+    market_generator = Gbm(mu=0.1, sigma=0.5)
 
     # loan-to-values
-    theta = 0.85
-    theta0 = 0.70
+    theta = 0.9
+    theta0 = 0.85
 
-    cvar = deep_hedging.solve(
+    cvar, _, _, _ = deep_hedging.solve(
         batch_size=args.batch_size,
         n_epochs=args.n_epochs,
         ts=ts,
@@ -52,7 +52,8 @@ if __name__ == "__main__":
         theta=theta,
         p0=2000,
         level=0.1,
-        # deep_hedging_type=deep_hedging.DeepHedgingBarrierOption, # deep_hedging_type
-        deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption,  # deep_hedging_type
+        deep_hedging_type=deep_hedging.DeepHedgingBarrierOption,  # deep_hedging_type
+        # deep_hedging_type=deep_hedging.DeltaHedgeBarrierOption,  # deep_hedging_type
+        dir_results="results",
     )
     print(cvar)
