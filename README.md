@@ -18,6 +18,15 @@ Alternatively, you can directly run
 hatch run examples:deep_hedging
 ```
 
+Results of `python batch_deep_hedging.py` include
+- CVaR of the hedging strategy at terminal time T
+- MSE of the hedging strategy
+- Initial capital needed to hedge the option
+
+and are saved in the  `results/deep_hedging.json`.
+
+Model weights for the hedging stragegy are saved in the file `results/mu{}_sigma{}_theta{}/model.pt`
+
 
 ## Context
 
