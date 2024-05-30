@@ -58,8 +58,7 @@ $$\tau^B := \inf \left\\{ t \in [0,T] \mid \theta P_t e^{r^{c,E} \, t} \leq \the
 
 Since LLTV $\theta<1$ then for all $t<\tau^B$
 
-$$
-0< \theta P_t e^{r^{c,E} \, t} - \theta^0 \,P_0\ e^{r^{b,D}} < P_t e^{r^{c,E} \, t} -  \theta^0 \,P_0\ e^{r^{b,D}}\,.
+$$0< \theta P_t e^{r^{c,E} t} - \theta^0 P_0 e^{r^{b,D}} < P_t e^{r^{c,E} t} -  \theta^0 P_0\ e^{r^{b,D}}\,.
 $$
 
 The payoff accounting for liquidations is given by
