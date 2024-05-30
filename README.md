@@ -4,7 +4,7 @@
 ## Installation & Running
 
 This repo uses [hatch](https://hatch.pypa.io/latest/) for dependency
-management. In order to run the examples, activate the environment by running
+management. In order to run the examples, first activate the environment 
 
 ```
 hatch shell
@@ -12,6 +12,11 @@ hatch shell
 
 and then run `python deep_hedging.py` for one combination of parameters (initial loan to value, market drift, market vol),
 or `python batch_deep_hedging.py` for parallel deep hedging for different combinations of parameters.
+
+Alternatively, you can directly run 
+```
+hatch run examples:deep_hedging
+```
 
 
 ## Context
@@ -31,20 +36,17 @@ or `python batch_deep_hedging.py` for parallel deep hedging for different combin
 
 
 The loan position has a maturity $T>0$.
-At any time $t\in [0,T]$, the holder of the position may choose to pay back the loan $\theta^0 \,P_0 e^{r^{b,D}\, t}$ in exchange for the collateral with value $P_t\,e^{r^{c,E}\,t} $. Note that a rational agent will only do that if $\theta^0 \,P_0 e^{r^{b,D}\, t} \leq P_t\,e^{r^{c,E}\,t}$, otherwise it is better to walk away from the position.  Hence,   the agent in entitled to the  payoff
-$$
-  (P_t\,e^{r^{c,E}\,t} -\theta^0 \,P_0 e^{r^{b,D}\, t} )^{+}\,,
-  % = e^{r^{b,D}\, t} (P_t\,e^{(r^{c,E}-r^{b,D})\,t} -\theta^0 \,P_0  )_{+},
-$$
+At any time $t\in [0,T]$, the holder of the position may choose to pay back the loan $\theta^0 \,P_0 e^{r^{b,D}\, t}$ in exchange for the collateral with value $P_t\,e^{r^{c,E}\,t} $. Note that a rational agent will only do that if $\theta^0 \,P_0 e^{r^{b,D}\, t} \leq P_t\,e^{r^{c,E}\,t}$, otherwise it is better to walk away from the position.  Hence,   the agent is entitled to the  payoff
+$$(P_t\,e^{r^{c,E}\,t} -\theta^0 \,P_0 e^{r^{b,D}\, t} )^{+},$$
  where $x^+ = \max\{0,x\}$.
 
  Many leading protocols have liquidation constraints.
  If the value of the asset falls too low, the position will be liquidated.
  Let $\theta \in (\theta^0,1)$ be a liquidation threshold (LLTV),
  and let $\tau^B$ be the liquidation time  defined by
-$$
-   \tau^B \coloneqq \inf \left\{ t \in [0,T] \mid \theta P_t e^{r^{c,E} \, t} \leq \theta^0 \,P_0\ e^{r^{b,D} \,t}  \right\}\,.
-$$
+
+$$\tau^B := \inf \left\\{ t \in [0,T] \mid \theta P_t e^{r^{c,E} \, t} \leq \theta^0 \,P_0\ e^{r^{b,D} \,t}  \right\\}\,.$$
+
 Since LLTV $\theta<1$ then for all $t<\tau^B$
 
 $$
@@ -52,8 +54,6 @@ $$
 $$
 
 The payoff accounting for liquidations is given by
-$$
-\psi(t, P_t) = (P_t\,e^{r^{c,E}\,t} - \theta^0 \,P_0\,e^{r^{b,D}\, t} )\mathbf{1}_{\{t<\tau^B\}}\,.
-$$
+$$\psi(t, P_t) = (P_t\,e^{r^{c,E}\,t} - \theta^0 \,P_0\,e^{r^{b,D}\, t} )\mathbf{1}_{\{t<\tau^B\}}\,.$$
 
 Note that this contract is  equivalent to a down-and-out barrier option, where the position becomes worthless to its holder when the value of the collateral falls sufficiently low.
