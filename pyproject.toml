@@ -26,8 +26,6 @@ classifiers = [
 ]
 dependencies = ["torch", "numpy", "tqdm", "scipy", "joblib", "matplotlib","ipykernel", "pandas", "Historic-Crypto"]
 
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.envs.dev]
 dependencies = [
@@ -36,3 +34,7 @@ dependencies = [
 
 [tool.hatch.envs.dev.scripts]
 lint = "pre-commit install && pre-commit run --all-files"
+
+[tool.hatch.envs.examples.scripts]
+deep_hedging = "python deep_hedging.py"
+batch_deeph_hedging = "python batch_deep_hedging.py"
