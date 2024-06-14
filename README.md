@@ -18,6 +18,15 @@ Alternatively, you can directly run
 hatch run examples:deep_hedging
 ```
 
+Results of `python batch_deep_hedging.py` include
+- CVaR of the hedging strategy at terminal time T
+- MSE of the hedging strategy
+- Initial capital needed to hedge the option
+
+and are saved in the  `results/deep_hedging.json`.
+
+Model weights for the hedging stragegy are saved in the file `results/mu{}_sigma{}_theta{}/model.pt`
+
 
 ## Context
 
@@ -49,8 +58,7 @@ $$\tau^B := \inf \left\\{ t \in [0,T] \mid \theta P_t e^{r^{c,E} \, t} \leq \the
 
 Since LLTV $\theta<1$ then for all $t<\tau^B$
 
-$$
-0< \theta P_t e^{r^{c,E} \, t} - \theta^0 \,P_0\ e^{r^{b,D}} < P_t e^{r^{c,E} \, t} -  \theta^0 \,P_0\ e^{r^{b,D}}\,.
+$$0< \theta P_t e^{r^{c,E} t} - \theta^0 P_0 e^{r^{b,D}} < P_t e^{r^{c,E} t} -  \theta^0 P_0\ e^{r^{b,D}}\,.
 $$
 
 The payoff accounting for liquidations is given by
