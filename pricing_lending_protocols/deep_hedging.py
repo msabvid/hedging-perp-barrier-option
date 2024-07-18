@@ -416,7 +416,7 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
                 + (1 + self.r_bD * h)
                 * torch.clamp(v[:, i, :] - hedge[:, i, :] * p, max=0)
                 + (1 + self.r_cE * h) * torch.clamp(hedge[:, i, :], min=0) * p_new
-                + (1 + self.r_cE * h) * torch.clamp(hedge[:, i, :], max=0) * p_new
+                + (1 + self.r_bE * h) * torch.clamp(hedge[:, i, :], max=0) * p_new
             )
 
             # calculate payoff of loan position
@@ -435,14 +435,14 @@ class DeepHedgingBarrierOption(DeepHedgingBase):
             )
             payoff = payoff * liquidated.logical_not()
             v_new = v_new * liquidated.logical_not()
-            cost_transaction = 20  # self.mean_gas_fees * p
+            cost_transaction = self.mean_gas_fees  # 20  # self.mean_gas_fees * p
             change_units_eth = (
                 hedge[:, i, :] if i == 0 else hedge[:, i, :] - hedge[:, i - 1, :]
             )
             # I approximate indicator function by (1-e^(x^2)) in order
             # to backpropagate
             transaction_costs = cost[:, i, :] + cost_transaction * (
-                1 - torch.exp(-(change_units_eth**2))
+                1 - torch.exp(-10 * (change_units_eth**2))
             )
             transaction_costs = transaction_costs * liquidated.logical_not()
 

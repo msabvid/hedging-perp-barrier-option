@@ -23,9 +23,9 @@ if __name__ == "__main__":
     r_cE = 0.017
 
     # gas fees
-    mean_gas_fees = 5e-9  # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
-    units_gas_transaction = 100000  # 21000
-    mean_gas_fees = mean_gas_fees * units_gas_transaction
+    mean_gas_fees = 20  # https://etherscan.io/gastracker, 5gwei = 5 * 10^-9 ETH
+    # units_gas_transaction = 100000  # 21000
+    # mean_gas_fees = mean_gas_fees * units_gas_transaction
 
     # random seed
     torch.random.seed = 1
