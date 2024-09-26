@@ -101,9 +101,9 @@ $$
 
 where $c_k : \mathbb R \rightarrow \mathbb R_+$ is some non-negative function.
 
-Next, we parametrise $\pi_t$ by a recurrent neural network such that 
+Next, we parametrise $\pi_t$ by a recurrent neural network such that
 
-$$\pi_{t_k} \approx \pi^{\phi^*}(P_{t_k}, \pi_{t_k})$$ 
+$$\pi_{t_k} \approx \pi^{\phi^*}(P_{t_k}, \pi_{t_k})$$
 
 with $\phi^* \in \mathbb R^p, v_0^*\in \mathbb R$ the network's parameters and the initial wealth value satisfying
 
