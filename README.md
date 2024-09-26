@@ -1,5 +1,6 @@
 # Hedging perpetual down-and-out barrier option
 
+Code for the experiments in the paper [Pricing and hedging of decentralised lending contracts](https://arxiv.org/abs/2409.04233).
 
 ## Installation & Running
 
